@@ -1,7 +1,9 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, Response, flash
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required
+from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, current_user
+from flask.ext.security.forms import RegisterForm, TextField, Required, ConfirmRegisterForm
 from flask.ext.mail import Mail
+from boto.ec2 import connect_to_region
 import json
 
 app = Flask(__name__)
@@ -9,14 +11,19 @@ app.config['DEBUG'] = True
 app.config['SECRET_KEY'] = "afsdjfsafasd239"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://ctf:fishandchipsaredelicious@localhost/ctf'
 app.config['SECURITY_REGISTERABLE'] = True
-app.config['SECURITY_CONFIRMABLE'] = True
-app.config['SECURITY_PASSWORD_HASH'] = 'bcrypt'
+app.config['SECURITY_CONFIRMABLE'] = False
+app.config['SECURITY_PASSWORD_HASH'] = 'plaintext'
 app.config['SECURITY_PASSWORD_SALT'] = 'DFa#reJK84rijhAiojOIHGFKLAJR8U'
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = 'casectf@gmail.com'
 app.config['MAIL_PASSWORD'] = 'correcthorsebatterystaple'
+SECRET_KEY = 'LgGsOQJr27ZRiBeeuRx/kSBf6fV8Qs7wH1o/djA7'
+ACCESS_KEY = 'AKIAJGM53Z656332A33A'
+ec2 = connect_to_region('us-east-1', aws_access_key_id = ACCESS_KEY,
+        aws_secret_access_key = SECRET_KEY)
+
 mail = Mail(app)
 db = SQLAlchemy(app)
 session = db.session
@@ -32,8 +39,9 @@ class Team(db.Model, UserMixin):
     teamname = db.Column(db.String(50), unique=True)
     password = db.Column(db.String(50))
     active = db.Column(db.Boolean())
-    instance_ip = db.Column(db.String(15))
+    instance = db.Column(db.Integer(), db.ForeignKey('instances.iid'))
     score = db.Column(db.Integer())
+    confirmed_at = db.Column(db.DateTime(), nullable=True)
     roles = db.relationship('Role', secondary=roles_teams,
                 backref=db.backref('teams', lazy='dynamic'))
 
@@ -42,7 +50,6 @@ class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
-
 
 class Problem(db.Model):
     __tablename__ = 'problems'
@@ -59,14 +66,33 @@ class Solution(db.Model):
     state = db.Column(db.Enum('correct', 'compromised', 'incorrect'))
     compromised_by = db.Column(db.Integer(), db.ForeignKey('teams.id'))
 
+class Instance(db.Model):
+    __tablename__ = 'instances'
+    iid = db.Column(db.Integer(), primary_key = True)
+    instance_id = db.Column(db.String(12), unique=True)
+    ip = db.Column(db.String(15))
+    priv_key = db.Column(db.String(2048))
+
 user_datastore = SQLAlchemyUserDatastore(db, Team, None)
 security = Security(app, user_datastore)
 
-@app.route('/')
+@app.route('/scoreboard')
 @login_required
-def root_callback():
-    scores = [{'teamname':x.teamname, 'ip':x.instance_ip, 'score':x.score} for x in session.query(Team).all()]
+def sb_callback():
+    scores = [{'teamname':x.teamname, 'score':x.score} for x in session.query(Team).all()]
     return render_template("scoreboard.html", scores = scores)
+
+@app.route('/')
+def root_callback():
+    print "called by user == " + str(current_user.get_id())
+    if current_user.is_anonymous():
+        uname = None
+        team_id = None
+    else:
+        uname = current_user.teamname
+        team_id = current_user.get_id()
+    print uname, team_id
+    return render_template("index.html", username = uname, team_id = team_id)
 
 @app.route('/score/<int:teamid>')
 def get_score(teamid):
@@ -86,15 +112,37 @@ def teams():
 def team_management():
     pass
 
-@app.route('/teamsetup/<teamname>')
-@login_required
-def setup_a_new_team(teamname):
+@app.route('/teammanagement', methods = ['POST'])
+def do_team_management():
     pass
+
+@app.route('/teamsetup/<int:teamid>')
+@login_required
+def setup_a_new_team(teamid):
+    if current_user.id != teamid:
+        return "<h1>Not Authorized.</h1>\n<p>Try logging in, or maybe get back to hacking on the code and not on my framework, jerk.  :P</p>", 403
+    keyname = current_user.teamname
+
+    current_instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
+    if current_instance:
+        ec2.terminate_instances([current_instance.instance_id])
+
+    while ec2.get_key_pair(keyname):
+        keyname = str(keyname) + '_'
+    key = ec2.create_key_pair(keyname)
+    reservation = ec2.run_instances('ami-1cbb2075', key_name = current_user.teamname, instance_type = 'm1.small')
+    instance = reservation.instances[0]
+    instance_record = Instance(ip=instance.ip_address, instance_id = instance.id, priv_key = key.material)
+    session.add(instance_record)
+    session.commit()
+    current_user.instance = instance_record.iid
+    session.add(current_user)
+    session.commit()
+    flash("Your key is here:   \n" + str(key.material))
+    return redirect('/')
 
 
 if __name__ == "__main__":
-    db.drop_all()
-    db.create_all()
-    session.add(Team(teamname = "thisisatest", email="team", password="test", active=True))
-    session.commit()
+    #db.drop_all()
+    #db.create_all()
     app.run()
