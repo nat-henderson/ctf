@@ -32,6 +32,7 @@ roles_teams = db.Table('roles_teams',
                 db.Column('team_id', db.Integer(), db.ForeignKey('teams.id')),
                 db.Column('role_id', db.Integer(), db.ForeignKey('roles.id')))
 
+
 class Team(db.Model, UserMixin):
     __tablename__ = 'teams'
     id = db.Column(db.Integer(), primary_key = True)
@@ -73,8 +74,12 @@ class Instance(db.Model):
     ip = db.Column(db.String(15))
     priv_key = db.Column(db.String(2048))
 
+
+class ExtendedRegisterForm(RegisterForm):
+    teamname = TextField('Team Name', [Required()])
+
 user_datastore = SQLAlchemyUserDatastore(db, Team, None)
-security = Security(app, user_datastore)
+security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
 
 @app.route('/scoreboard')
 @login_required

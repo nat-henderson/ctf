@@ -1,1 +1,25 @@
-<p> hi </p>
+<!DOCTYPE html>
+<haml>
+  <head>
+    <link href='/static/css/bootstrap.css' rel='stylesheet'>
+    <script src='/static/js/jquery.js'></script>
+    <script>
+      update_scoreboard = function(){
+        $.getJSON('/scoreboard', function(data) {
+          var items = []
+          $.each(data, function(k,a) {
+            items.push('<tr><td>'+a[0]+'</td><td>'+a[1]+'</td></tr>');
+          });
+          $('#scoreboard').html("<table><tr><th>Team</th><th>Score</th></tr>" + items.join('')+"</table>");
+        });
+      }
+      $(document).ready(function(){
+        update_scoreboard();
+        setInterval(update_scoreboard, 5000);
+      })
+    </script>
+  </head>
+  <body>
+    <div id='scoreboard'></div>
+  </body>
+</haml>

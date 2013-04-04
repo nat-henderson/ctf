@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<haml>
+  <head>
+    <link href='/static/css/bootstrap.css' rel='stylesheet'>
+    <script src='/static/js/jquery.js'></script>
+    <script>
+      $(document).ready(function(){
+        $("#btn1").click(function(){
+          $.post("/team_management", {button_pressed: "one"})
+        }
+        $("#btn2").click(function(){
+          $.post("/team_management", {button_pressed: "two"})
+        }
+        $("#btn3").click(function(){
+          $.post("/team_management", {button_pressed: "three"})
+        }
+      })
+    </script>
+  </head>
+  <body>
+    <button class='btn' id='btn1' type='button'>Action1</button>
+    <br>
+    <button class='btn' id='btn2' type='button'>Action2</button>
+    <br>
+    <button class='btn' id='btn3' type='button'>Action3</button>
+  </body>
+</haml>
