@@ -58,14 +58,15 @@ class Problem(db.Model):
     problem_s3_location = db.Column(db.String(100))
     problem_testing_script_location = db.Column(db.String(100))
 
-class Solution(db.Model):
-    __tablename__ = 'solutions'
+class ProblemCheckout(db.Model):
+    __tablename__ = 'checkouts'
     sid = db.Column(db.Integer(), primary_key = True)
     team = db.Column(db.Integer(), db.ForeignKey('teams.id'))
     problem = db.Column(db.Integer(), db.ForeignKey('problems.problem_id'))
+    secret_hash = db.Column(db.String(64))
     posted_time = db.Column(db.Time())
-    state = db.Column(db.Enum('correct', 'compromised', 'incorrect'))
-    compromised_by = db.Column(db.Integer(), db.ForeignKey('teams.id'))
+    state = db.Column(db.Enum('correct', 'compromised', 'incorrect', 'down'))
+    compromised_by = db.Column(db.Integer(), db.ForeignKey('teams.id'), nullable=True)
 
 class Instance(db.Model):
     __tablename__ = 'instances'
@@ -146,8 +147,55 @@ def setup_a_new_team(teamid):
     flash("Your key is here:   \n" + str(key.material))
     return redirect('/')
 
+@app.route('/report')
+@login_required #Report will allow users to report either a solution or a compromise.
+def report():
+    return render_template("report.html", current_user.teamname, current_user.get_id())
+
+@app.route('/report', methods=['POST'])
+@login_required
+def do_report():
+    if request.form['type'] == 'compromise':
+        rep_team = current_user.get_id()
+        comp_team = request.form['compTeam']
+        secret = request.form['secret']
+        #sha256 secret
+        m = hashlib.sha256()
+        m.update(secret)
+        match = session.query(ProblemCheckout).filter(ProblemCheckout.secret_hash == m.hexdigest()).first()
+        if not match:
+            flash('The secret that you have submitted is not valid. Check that you have copied it correctly and try again.')
+            return redirect('/')
+        if not match.team == comp_team:
+            flash ('That solution is not valid.')
+        if match.state == 'compromised':
+            flash ('That problem has already been compromised.')
+            return redirect('/')
+        if match.state == 'down':
+            flash ('That problem is no longer active.')
+            return redirect('/')
+        match.state = 'compromised'
+        match.compromised_by = rep_team
+        session.add(match)
+        session.commit()
+        flash ('Solution successfully validated!')
+        return redirect('/')
+
+    if not request.form['type'] == 'solve':
+        return redirect('/')
+
+    team = current_user.get_id()
+    problem = request.form['problem']
+    match = session.query(ProblemCheckout).filter(ProblemCheckout.team == team).filter(ProblemCheckout.problem = problem).first()
+    match.state = 'correct'
+    match.posted_time = datetime.now()
+    session.add(match)
+    session.commit()
+    flash('Solution successfully submitted!')
+    run_test(team, problem)
+    return redirect('/')
 
 if __name__ == "__main__":
-    #db.drop_all()
-    #db.create_all()
-    app.run()
+    db.drop_all()
+    db.create_all()
+    app.run(host='0.0.0.0')
