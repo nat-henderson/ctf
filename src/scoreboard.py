@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response, flash
+from flask import Flask, request, render_template, Response, flash, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, current_user
 from flask.ext.security.forms import RegisterForm, TextField, Required, ConfirmRegisterForm
@@ -41,7 +41,7 @@ class Team(db.Model, UserMixin):
     password = db.Column(db.String(50))
     active = db.Column(db.Boolean())
     instance = db.Column(db.Integer(), db.ForeignKey('instances.iid'))
-    score = db.Column(db.Integer())
+    score = db.Column(db.Integer(), default = 0)
     confirmed_at = db.Column(db.DateTime(), nullable=True)
     roles = db.relationship('Role', secondary=roles_teams,
                 backref=db.backref('teams', lazy='dynamic'))
@@ -112,10 +112,34 @@ def teams():
     teams = session.query(Team).all()
     return json.dumps([x.teamname for x in teams])
 
+@app.route('/team/<int:teamid>')
+def team():
+    pass
+
 @app.route('/teammanagement')
 @login_required
 def team_management():
-    pass
+    instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
+    instance_ip = 'Not Ready'
+    if instance is None:
+        pass
+    elif instance.ip is None:
+        all_instances = ec2.get_all_instances()
+        for reservation in all_instances:
+            print reservation
+            if reservation.instances[0].id == instance.instance_id:
+                if reservation.instances[0].ip_address:
+                    instance.ip_address = reservation.instances[0].ip_address
+                    instance_ip = instance.ip_address
+                    session.add(instance)
+                    session.commit()
+                break
+    else:
+        instance_ip = instance.ip_address
+
+    print instance
+
+    return render_template("team_management.html", team = current_user, instance_ip = instance_ip)
 
 @app.route('/teammanagement', methods = ['POST'])
 def do_team_management():
@@ -143,7 +167,9 @@ def setup_a_new_team(teamid):
     current_user.instance = instance_record.iid
     session.add(current_user)
     session.commit()
-    flash("Your key is here:   \n" + str(key.material))
+    flash("Your key is here:")
+    flash(str(key.material))
+    flash("Your instance is being brought up.  Its IP address will be available on the team management page soon.")
     return redirect('/')
 
 
