@@ -214,7 +214,7 @@ def do_report():
 
     team = current_user.get_id()
     problem = request.form['problem']
-    match = session.query(ProblemCheckout).filter(ProblemCheckout.team == team).filter(ProblemCheckout.problem = problem).first()
+    match = session.query(ProblemCheckout).filter(ProblemCheckout.team == team).filter(ProblemCheckout.problem == problem).first()
     match.state = 'correct'
     match.posted_time = datetime.now()
     session.add(match)
