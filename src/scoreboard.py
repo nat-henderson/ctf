@@ -154,12 +154,14 @@ def setup_a_new_team(teamid):
 
     current_instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
     if current_instance:
-        ec2.terminate_instances([current_instance.instance_id])
+        try:
+            ec2.terminate_instances([current_instance.instance_id])
+        except: pass
 
     while ec2.get_key_pair(keyname):
         keyname = str(keyname) + '_'
     key = ec2.create_key_pair(keyname)
-    reservation = ec2.run_instances('ami-1cbb2075', key_name = current_user.teamname, instance_type = 'm1.small')
+    reservation = ec2.run_instances('ami-1cbb2075', key_name = keyname, instance_type = 'm1.small')
     instance = reservation.instances[0]
     instance_record = Instance(ip=instance.ip_address, instance_id = instance.id, priv_key = key.material)
     session.add(instance_record)
@@ -170,7 +172,7 @@ def setup_a_new_team(teamid):
     flash("Your key is here:")
     flash(str(key.material))
     flash("Your instance is being brought up.  Its IP address will be available on the team management page soon.")
-    return redirect('/')
+    return ""
 
 
 if __name__ == "__main__":
