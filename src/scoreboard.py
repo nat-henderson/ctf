@@ -141,10 +141,6 @@ def team_management():
 
     return render_template("team_management.html", team = current_user, instance_ip = instance_ip)
 
-@app.route('/teammanagement', methods = ['POST'])
-def do_team_management():
-    pass
-
 @app.route('/teamsetup/<int:teamid>')
 @login_required
 def setup_a_new_team(teamid):
