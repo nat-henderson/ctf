@@ -9,14 +9,14 @@
   <body>
       <div id='complete'>
           Report a problem completion.<br>
-          <form action='complete'>
+          <form action='complete', method="post">
               Problem: <input type="text" name='problem'><br>
               <input type="submit" value="Submit">
           </form>
       </div>
       <div id='report'>
           Report a compromise of another team's problem.<br>
-          <form action='compromise'>
+          <form action='compromise', method="post">
               Compromised Team ID: <input type="text" name="compTeam"><br>
               Secret Code: <input type="text" name="secret"><br>
               <input type="submit" value="Submit">

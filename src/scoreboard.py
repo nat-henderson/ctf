@@ -177,7 +177,7 @@ def setup_a_new_team(teamid):
 @app.route('/report')
 @login_required #Report will allow users to report either a solution or a compromise.
 def report():
-    return render_template("report.html", current_user.teamname, current_user.get_id())
+    return render_template("report.html")
 
 @app.route('/compromise', methods=['POST'])
 @login_required
@@ -207,12 +207,16 @@ def do_compromise():
     flash ('Solution successfully validated!')
     return redirect('/')
 
-@app.route('complete', methods=['POST'])
+@app.route('/complete', methods=['POST'])
 @login_required
 def do_complete():
     team = current_user.get_id()
     problem = request.form['problem']
     match = session.query(ProblemCheckout).filter(ProblemCheckout.team == team).filter(ProblemCheckout.problem == problem).first()
+    if not match:
+        flash('No such problem.')
+        return redirect('/')
+
     match.state = 'correct'
     match.posted_time = datetime.now()
     session.add(match)
