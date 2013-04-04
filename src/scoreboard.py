@@ -114,8 +114,11 @@ def teams():
     return json.dumps([x.teamname for x in teams])
 
 @app.route('/team/<int:teamid>')
-def team():
-    pass
+def team(teamid):
+    team = session.query(Team).filter(Team.id == teamid).first()
+    instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
+    instance_ip = instance.ip
+    return render_template('team.html', team=team, instance_ip = instance_ip)
 
 @app.route('/teammanagement')
 @login_required
@@ -220,6 +223,6 @@ def do_report():
     return redirect('/')
 
 if __name__ == "__main__":
-    db.drop_all()
-    db.create_all()
+    #db.drop_all()
+    #db.create_all()
     app.run(host='0.0.0.0')
