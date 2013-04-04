@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+{% from "security/_macros.html" import render_field_with_errors, render_field %}
+<html>
+  <head>
+    <link href='static/css/bootstrap.css' rel='stylesheet'>
+    <script src='static/js/jquery.js'></script>
+  </head>
+{% include "security/_messages.html" %}
+  <body>
+    <a href='register'>Register!</a>
+    <br>
+    <a href='login'>Login!</a>
+    <br>
+    <a href='team_management'>Manage Team Shit!</a>
+    <br>
+    <a href='scoreboard'>Scoreboard shit!</a>
+  </body>
+</html>
