@@ -90,14 +90,19 @@ def sb_callback():
 
 @app.route('/')
 def root_callback():
-    print "called by user == " + str(current_user.get_id())
     if current_user.is_anonymous():
         uname = None
         team_id = None
     else:
         uname = current_user.teamname
         team_id = current_user.get_id()
-    print uname, team_id
+        checkouts = session.query(ProblemCheckout).filter(ProblemCheckout.team == team_id).all()
+        if not checkouts:
+            for problem in session.query(Problem).all():
+                session.add(ProblemCheckout(team=team_id, problem=problem.problem_id, secret_hash=None, posted_time=None,
+                    state='down', compromised_by=None))
+            session.commit()
+
     return render_template("index.html", username = uname, team_id = team_id)
 
 @app.route('/score/<int:teamid>')
@@ -205,6 +210,39 @@ def do_compromise():
     session.add(match)
     session.commit()
     flash ('Solution successfully validated!')
+    return redirect('/')
+
+@app.route('/manageproblems')
+@login_required
+def manage_problems():
+    team_id = current_user.get_id()
+    #TODO:  WRITE THIS ACTUAL PAGE
+
+@app.route('/bringup/<int:problem_id>')
+def bring_up_problem(problem_id):
+    checkout = session.query(ProblemCheckout).filter(ProblemCheckout.team == current_user.get_id()).filter(
+            ProblemCheckout.problem == problem_id).first()
+    problem = session,query(Problem).filter(Problem.problem_id == problem_id).first()
+    if not checkout or not problem:
+        flash('problem does not exist')
+        return redirect('/')
+    #TODO:  GET FROM S3, PLANT SECRET
+
+
+@app.route('/bringdown/<int:problem_id>')
+def bring_down_problem(problem_id):
+    checkout = session.query(ProblemCheckout).filter(ProblemCheckout.team == current_user.get_id()).filter(
+            ProblemCheckout.problem == problem_id).first()
+    if not checkout:
+        flash('problem does not exist')
+        return redirect('/')
+    checkout.secret_hash = None
+    checkout.posted_time = None
+    checkout.state = 'down'
+    checkout.compromised_by = None
+    session.add(checkout)
+    session.commit()
+    flash('successfully taken down')
     return redirect('/')
 
 @app.route('/complete', methods=['POST'])
