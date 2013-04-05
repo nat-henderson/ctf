@@ -4,6 +4,8 @@ from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, Rol
 from flask.ext.security.forms import RegisterForm, TextField, Required, ConfirmRegisterForm
 from flask.ext.mail import Mail
 from boto.ec2 import connect_to_region
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
 import json
 
 app = Flask(__name__)
@@ -20,7 +22,9 @@ app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = 'casectf@gmail.com'
 app.config['MAIL_PASSWORD'] = 'correcthorsebatterystaple'
 SECRET_KEY = 'LgGsOQJr27ZRiBeeuRx/kSBf6fV8Qs7wH1o/djA7'
+BUCKET_NAME = 'case_ctf_spring_2013'
 ACCESS_KEY = 'AKIAJGM53Z656332A33A'
+s3 = S3Connection(ACCESS_KEY, SECRET_KEY)
 ec2 = connect_to_region('us-east-1', aws_access_key_id = ACCESS_KEY,
         aws_secret_access_key = SECRET_KEY)
 
@@ -63,7 +67,7 @@ class ProblemCheckout(db.Model):
     sid = db.Column(db.Integer(), primary_key = True)
     team = db.Column(db.Integer(), db.ForeignKey('teams.id'))
     problem = db.Column(db.Integer(), db.ForeignKey('problems.problem_id'))
-    secret_hash = db.Column(db.String(64))
+    secret = db.Column(db.String(64))
     posted_time = db.Column(db.Time())
     state = db.Column(db.Enum('correct', 'compromised', 'incorrect', 'down'))
     compromised_by = db.Column(db.Integer(), db.ForeignKey('teams.id'), nullable=True)
@@ -99,7 +103,7 @@ def root_callback():
         checkouts = session.query(ProblemCheckout).filter(ProblemCheckout.team == team_id).all()
         if not checkouts:
             for problem in session.query(Problem).all():
-                session.add(ProblemCheckout(team=team_id, problem=problem.problem_id, secret_hash=None, posted_time=None,
+                session.add(ProblemCheckout(team=team_id, problem=problem.problem_id, secret=None, posted_time=None,
                     state='down', compromised_by=None))
             session.commit()
 
@@ -190,10 +194,7 @@ def do_compromise():
     rep_team = current_user.get_id()
     comp_team = request.form['compTeam']
     secret = request.form['secret']
-    #sha256 secret
-    m = hashlib.sha256()
-    m.update(secret)
-    match = session.query(ProblemCheckout).filter(ProblemCheckout.secret_hash == m.hexdigest()).first()
+    match = session.query(ProblemCheckout).filter(ProblemCheckout.secret == secret).first()
     if not match:
         flash('The secret that you have submitted is not valid. Check that you have copied it correctly and try again.')
         return redirect('/')
@@ -223,9 +224,19 @@ def bring_up_problem(problem_id):
     checkout = session.query(ProblemCheckout).filter(ProblemCheckout.team == current_user.get_id()).filter(
             ProblemCheckout.problem == problem_id).first()
     problem = session,query(Problem).filter(Problem.problem_id == problem_id).first()
-    if not checkout or not problem:
+    instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
+    if not checkout or not problem or not instance or not instance.ip_address:
         flash('problem does not exist')
         return redirect('/')
+
+    local_test = './testscript-' + str(problem.problem_id)
+    if not path.exists(local_test):
+        bucket = s3.create_bucket(BUCKET_NAME)
+        key = Key(bucket)
+        key.key = problem.problem_testing_script_location
+    key.get_contents_to_filename(local_test)
+
+    subprocess.call([local_test, 'put', instance.ip_address, secret])
     #TODO:  GET FROM S3, PLANT SECRET
 
 
@@ -236,7 +247,7 @@ def bring_down_problem(problem_id):
     if not checkout:
         flash('problem does not exist')
         return redirect('/')
-    checkout.secret_hash = None
+    checkout.secret = None
     checkout.posted_time = None
     checkout.state = 'down'
     checkout.compromised_by = None
