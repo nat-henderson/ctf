@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block head %}
-<!--
 <script>
   update_teams = function(){
     $.getJSON(window.location.pathname, function(data){
@@ -24,18 +23,10 @@
     update_teams();
     setInterval(update_teams, 10000);
   })
-</script>-->
+</script>
 {% endblock %}
 {% block content %}
-<div class="row">
-  <div class="span2">
-    {{team.teamname}}
-  </div>
-  <div class="span2">
-    {{team.score}}
-  </div>
-  <div class="span2">
-    {{instance_ip}}
-  </div>
+<p>I'm fixing it I promise!</p>
+<div class="teamboard">
 </div>
 {% endblock %}

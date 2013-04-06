@@ -29,9 +29,14 @@ def root_callback():
 def get_score(teamid):
     try:
         team = session.query(Team).filter(Team.id == teamid).one()
+        instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
+        if not instance or not instance.ip:
+          instance_ip = "Not Ready"
+        else:
+          instance_ip = instance.ip
     except:
         score = 0
-    return json.dumps([team.teamname, team.score])
+    return json.dumps([team.teamname, team.score, instance_ip])
 
 @app.route('/teams')
 def teams():
@@ -41,17 +46,25 @@ def teams():
 @app.route('/team')
 @login_required
 def redirect_team():
-    return team(current_user.get_id())
+    #return team(current_user.get_id())
+    teamid = current_user.get_id()
+    team = session.query(Team).filter(Team.id == teamid).first()
+    checkouts = session.query(ProblemCheckout).filter(ProblemCheckout.team == teamid).all()
+    if request.json:
+      #return json.dumps([[checkout.sid, checkout.team, checkout.problem, checkout.secret, checkout.posted_time, checkout.state, checkout.compromised_by] for checkout in checkouts])
+      return json.dumps([[1,2,3,4,5,6]])
+    else:
+      return render_template('team.html')
 
 @app.route('/team/<int:teamid>')
 def team(teamid):
     team = session.query(Team).filter(Team.id == teamid).first()
-    instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
-    if not instance or not instance.ip:
-      instance_ip = "Not Ready"
+    checkouts = session.query(ProblemCheckout).filter(ProblemCheckout.team == teamid).all()
+    if request.json:
+      return json.dumps([[checkout.sid, checkout.team, checkout.problem, checkout.secret, checkout.posted_time, checkout.state, checkout.compromised_by] for checkout in checkouts])
     else:
-      instance_ip = instance.ip
-    return render_template('team.html', team=team, instance_ip = instance_ip)
+      return render_template('team.html', team=team, checkouts = checkouts)
+
 
 @app.route('/teammanagement')
 @login_required
