@@ -6,7 +6,8 @@ from flask.ext.mail import Mail
 from boto.ec2 import connect_to_region
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
-import json
+from urllib2 import urlopen
+import json, os, random, string, subprocess
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -86,12 +87,6 @@ class ExtendedRegisterForm(RegisterForm):
 user_datastore = SQLAlchemyUserDatastore(db, Team, None)
 security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
 
-@app.before_first_request
-def before_first():
-    for problem in session.query(Problem).all():
-        startup_script += '\nwget -O problem' + str(problem.problem_id) + '.tgz ' + problem.problem_download_location + '\n'
-        startup_script += 'tar xzf problem' + str(problem.problem_id) + '.tgz\n'
-
 @app.route('/scoreboard')
 @login_required
 def sb_callback():
@@ -150,13 +145,13 @@ def team_management():
             print reservation
             if reservation.instances[0].id == instance.instance_id:
                 if reservation.instances[0].ip_address:
-                    instance.ip_address = reservation.instances[0].ip_address
-                    instance_ip = instance.ip_address
+                    instance.ip = reservation.instances[0].ip_address
+                    instance_ip = instance.ip
                     session.add(instance)
                     session.commit()
                 break
     else:
-        instance_ip = instance.ip_address
+        instance_ip = instance.ip
 
     print instance
 
@@ -179,7 +174,7 @@ def setup_a_new_team(teamid):
         keyname = str(keyname) + '_'
     key = ec2.create_key_pair(keyname)
     reservation = ec2.run_instances('ami-1cbb2075', key_name = keyname,
-            instance_type = 'm1.small', user_data = startup_script)
+            instance_type = 'm1.small', user_data = startup_script, security_groups = ['superdumb'])
     instance = reservation.instances[0]
     instance_record = Instance(ip=instance.ip_address, instance_id = instance.id, priv_key = key.material)
     session.add(instance_record)
@@ -236,18 +231,23 @@ def bring_up_problem(problem_id):
             ProblemCheckout.problem == problem_id).first()
     problem = session.query(Problem).filter(Problem.problem_id == problem_id).first()
     instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
-    if not checkout or not problem or not instance or not instance.ip_address:
+    print checkout, problem, instance, instance.ip
+    if not checkout or not problem or not instance or not instance.ip:
         flash('problem does not exist')
         return redirect('/')
 
     local_test = './testscript-' + str(problem.problem_id)
-    if not path.exists(local_test):
-        bucket = s3.create_bucket(BUCKET_NAME)
-        key = Key(bucket)
-        key.key = problem.problem_testing_script_location
-        key.get_contents_to_filename(local_test)
+    if not os.path.exists(local_test):
+        remote_f = urlopen(problem.problem_testing_script_location)
+        f = open(local_test,'w')
+        f.write(remote_f.read())
+        f.close()
+        os.chmod(local_test, 0755)
 
-    output = subprocess.call([local_test, 'put', instance.ip_address, checkout.secret])
+    checkout.secret = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(64))
+
+
+    output = subprocess.call([local_test, 'put', instance.ip, checkout.secret])
     if output == 0:
         flash('successfully brought up the service.')
         checkout.state = 'correct'
@@ -294,6 +294,18 @@ def do_complete():
 
 
 if __name__ == "__main__":
-    db.drop_all()
-    db.create_all()
-    app.run(host='0.0.0.0')
+    print 'dropping all tables'
+    #db.drop_all()
+    print 'creating all tables'
+    #db.create_all()
+    print 'adding problem'
+    #session.add(Problem(problem_download_location = 'https://s3.amazonaws.com/case_ctf_spring_2013/problem5.tgz',
+    #    problem_testing_script_location = 'https://s3.amazonaws.com/case_ctf_spring_2013/checker.py'))
+    #session.commit()
+    print 'setting up startupscript'
+    for problem in session.query(Problem).all():
+        startup_script += '\nwget -O /home/ubuntu/problem' + str(problem.problem_id) + '.tgz ' + problem.problem_download_location + '\n'
+        startup_script += 'tar xpzf /home/ubuntu/problem' + str(problem.problem_id) + '.tgz -C /home/ubuntu/\n'
+    print startup_script
+
+    app.run(host='0.0.0.0', use_reloader = False)

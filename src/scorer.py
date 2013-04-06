@@ -1,4 +1,4 @@
-from scoreboard import db
+from scoreboard import db, Team, Problem, ProblemCheckout, Instance
 
 session = db.session
 
@@ -28,13 +28,13 @@ def run_test(teamid, pid):
     team = session.query(Team).filter(Team.id == teamid).first()
     if not team:
         raise Exception("No such team.")
-    instance = session.query(Instance).filter(Instance.id == team.instance).first()
+    instance = session.query(Instance).filter(Instance.iid == team.instance).first()
     problem = session.query(Problem).filter(Problem.problem_id == pid).first()
     if not instance or not problem:
         raise Exception("No such instance or no such problem")
     checkout = session.query(ProblemCheckout).filter(ProblemCheckout.problem == problem.problem_id).filter(
-            ProblemCheckout.team = team.id).first()
-    if not checkout or checkout.status == 'down':
+            ProblemCheckout.team == team.id).first()
+    if not checkout or checkout.state == 'down':
         raise Exception("Problem is not up!")
     local_test = './testscript-' + str(problem.problem_id)
     test_pass = (subprocess.call([local_test, 'get', instance.ip_address, checkout.secret], stdout = output_local) == 0)
