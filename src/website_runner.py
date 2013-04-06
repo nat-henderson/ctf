@@ -163,6 +163,7 @@ def bring_up_problem(problem_id):
         return ""
 
     local_test = './testscript-' + str(problem.problem_id)
+    print local_test
     if not os.path.exists(local_test):
         remote_f = urlopen(problem.problem_testing_script_location)
         f = open(local_test,'w')
@@ -224,4 +225,4 @@ if __name__ == "__main__":
         startup_script += '\nwget -O /home/ubuntu/problem' + str(problem.problem_id) + '.tgz ' + problem.problem_download_location + '\n'
         startup_script += 'tar xpzf /home/ubuntu/problem' + str(problem.problem_id) + '.tgz -C /home/ubuntu/\n'
     print startup_script
-    app.run(host='0.0.0.0', port=4520)
+    app.run(host='0.0.0.0', port=80)

@@ -2,6 +2,7 @@ from scoreboard import db, Team, Problem, ProblemCheckout, Instance
 import subprocess, os, random, string
 from threading import Timer
 session = db.session
+TIME = 60.0
 
 t = None
 
@@ -13,7 +14,7 @@ def callback():
         except Exception as e:
             print e
             continue
-    t = Timer(60.0, callback)
+    t = Timer(TIME, callback)
     t.start()
 
 def run_tests(teamid):
@@ -50,6 +51,11 @@ def run_test(teamid, pid):
     test_pass = (subprocess.call([local_test, 'get', instance.ip, checkout.secret]) == 0)
     if checkout.state == 'compromised':
         team.score -= 20
+        comp_by = session.query(Team).filter(Team.id == checkout.compromised_by).first()
+        if comp_by:
+            comp_by.score += 5
+            session.add(comp_by)
+            session.commit()
     elif test_pass:
         checkout.state = 'correct'
         team.score += 1
@@ -65,5 +71,5 @@ def run_test(teamid, pid):
 
 
 if __name__ == "__main__":
-    t = Timer(60.0, callback)
+    t = Timer(TIME, callback)
     t.start()
