@@ -51,6 +51,11 @@ def run_test(teamid, pid):
     test_pass = (subprocess.call([local_test, 'get', instance.ip, checkout.secret]) == 0)
     if checkout.state == 'compromised':
         team.score -= 20
+        comp_by = session.query(Team).filter(Team.id == checkout.compromised_by).first()
+        if comp_by:
+            comp_by.score += 5
+            session.add(comp_by)
+            session.commit()
     elif test_pass:
         checkout.state = 'correct'
         team.score += 1
