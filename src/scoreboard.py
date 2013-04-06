@@ -21,12 +21,12 @@ app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USERNAME'] = 'casectf@gmail.com'
 app.config['MAIL_PASSWORD'] = 'correcthorsebatterystaple'
-SECRET_KEY = 'LgGsOQJr27ZRiBeeuRx/kSBf6fV8Qs7wH1o/djA7'
 BUCKET_NAME = 'case_ctf_spring_2013'
+SECRET_KEY = 'LgGsOQJr27ZRiBeeuRx/kSBf6fV8Qs7wH1o/djA7'
 ACCESS_KEY = 'AKIAJGM53Z656332A33A'
-s3 = S3Connection(ACCESS_KEY, SECRET_KEY)
 ec2 = connect_to_region('us-east-1', aws_access_key_id = ACCESS_KEY,
         aws_secret_access_key = SECRET_KEY)
+startup_script = "#! /bin/bash"
 
 mail = Mail(app)
 db = SQLAlchemy(app)
@@ -59,7 +59,7 @@ class Role(db.Model, RoleMixin):
 class Problem(db.Model):
     __tablename__ = 'problems'
     problem_id = db.Column(db.Integer(), primary_key = True)
-    problem_s3_location = db.Column(db.String(100))
+    problem_download_location = db.Column(db.String(100))
     problem_testing_script_location = db.Column(db.String(100))
 
 class ProblemCheckout(db.Model):
@@ -85,6 +85,12 @@ class ExtendedRegisterForm(RegisterForm):
 
 user_datastore = SQLAlchemyUserDatastore(db, Team, None)
 security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
+
+@app.before_first_request
+def before_first():
+    for problem in session.query(Problem).all():
+        startup_script += '\nwget -O problem' + str(problem.problem_id) + '.tgz ' + problem.problem_download_location + '\n'
+        startup_script += 'tar xzf problem' + str(problem.problem_id) + '.tgz\n'
 
 @app.route('/scoreboard')
 @login_required
@@ -172,7 +178,8 @@ def setup_a_new_team(teamid):
     while ec2.get_key_pair(keyname):
         keyname = str(keyname) + '_'
     key = ec2.create_key_pair(keyname)
-    reservation = ec2.run_instances('ami-1cbb2075', key_name = keyname, instance_type = 'm1.small')
+    reservation = ec2.run_instances('ami-1cbb2075', key_name = keyname,
+            instance_type = 'm1.small', user_data = startup_script)
     instance = reservation.instances[0]
     instance_record = Instance(ip=instance.ip_address, instance_id = instance.id, priv_key = key.material)
     session.add(instance_record)
@@ -221,7 +228,6 @@ def manage_problems():
     team_id = current_user.get_id()
     problems = session.query(ProblemCheckout).filter(ProblemCheckout.team == team_id).all()
     return render_template('problem_management.html', problems = problems, team=current_user)
-    #TODO:  WRITE THIS ACTUAL PAGE
 
 @app.route('/bringup/<int:problem_id>')
 def bring_up_problem(problem_id):
@@ -286,12 +292,8 @@ def do_complete():
     run_test(team, problem)
     return redirect('/')
 
-@app.before_first_request
-def before_first():
-    session.add(Problem(problem_s3_location='test', problem_testing_script_location = 'test2'))
-    session.commit()
 
 if __name__ == "__main__":
-    #db.drop_all()
-    #db.create_all()
+    db.drop_all()
+    db.create_all()
     app.run(host='0.0.0.0')
