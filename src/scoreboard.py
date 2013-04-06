@@ -90,8 +90,8 @@ security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
 @app.route('/scoreboard')
 @login_required
 def sb_callback():
-    scores = [{'teamname':x.teamname, 'score':x.score} for x in session.query(Team).all()]
-    return render_template("scoreboard.html", scores = scores)
+    #scores = [{'teamname':x.teamname, 'score':x.score} for x in session.query(Team).all()]
+    return render_template("scoreboard.html")
 
 @app.route('/')
 def root_callback():
@@ -118,7 +118,7 @@ def get_score(teamid):
         score = session.query(Team).filter(Team.id == teamid).one().score
     except:
         score = 0
-    return json.dumps(score)
+    return json.dumps({teamid:score})
 
 @app.route('/teams')
 def teams():
@@ -294,18 +294,4 @@ def do_complete():
 
 
 if __name__ == "__main__":
-    print 'dropping all tables'
-    #db.drop_all()
-    print 'creating all tables'
-    #db.create_all()
-    print 'adding problem'
-    #session.add(Problem(problem_download_location = 'https://s3.amazonaws.com/case_ctf_spring_2013/problem5.tgz',
-    #    problem_testing_script_location = 'https://s3.amazonaws.com/case_ctf_spring_2013/checker.py'))
-    #session.commit()
-    print 'setting up startupscript'
-    for problem in session.query(Problem).all():
-        startup_script += '\nwget -O /home/ubuntu/problem' + str(problem.problem_id) + '.tgz ' + problem.problem_download_location + '\n'
-        startup_script += 'tar xpzf /home/ubuntu/problem' + str(problem.problem_id) + '.tgz -C /home/ubuntu/\n'
-    print startup_script
-
-    app.run(host='0.0.0.0', use_reloader = False)
+    app.run(host='0.0.0.0', port=4520)
