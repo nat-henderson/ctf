@@ -38,6 +38,13 @@ def teams():
     teams = session.query(Team).all()
     return json.dumps([x.teamname for x in teams])
 
+@app.route('/team')
+def redirect_team():
+  if current_user.get_id():
+    return team(current_user.get_id())
+  else:
+    return redirect('/')
+
 @app.route('/team/<int:teamid>')
 def team(teamid):
     team = session.query(Team).filter(Team.id == teamid).first()
