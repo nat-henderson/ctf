@@ -1,34 +1,28 @@
-{% from "security/_macros.html" import render_field_with_errors, render_field %}
-<!DOCTYPE html>
-<html>
-  <head>
-    <link href='/static/css/bootstrap.css' rel='stylesheet'>
-    <script src='/static/js/jquery.js'></script>
-    <script> 
-        $(document).ready(function(){
-            $('[type=radio]').on('change', function(){
-            if ($(this).attr('value') == 'Up') {
-                $.get('/bringup/' + $(this).attr('name'), function(data){ },
-                function(){ alert('test'); window.location.reload(true);}).always(
-                function() { window.location.reload(true);}); }
-            else {
-                $.get('/bringdown/' + $(this).attr('name'), function(data){ }, 
-                function(){ window.location.reload(true);}).always(
-                function() { window.location.reload(true);}); }
-        }); });
-    </script>
-  </head>
-{% include "security/_messages.html" %}
-  <body>
-    <h1>Team {{team.teamname}}:  {{team.score}} points!</h1>
-    <h2>Instance:  {{instance_ip}}</h2>
-    <h3>{{team.email}}</h3>
-    {% for checkout, problem in problems %}
-    <h4> Problem {{problem.problem_id}}: {{problem.problem_name}} </h4>
-    <input type="radio" name="{{checkout.problem}}" value="Up" {%if checkout.state != 'down' %}checked{%endif%}>
-    Up <br>
-    <input type="radio" name="{{checkout.problem}}" value="Down" {%if checkout.state == 'down' %}checked{%endif%}>
-    Down <br>
-    {% endfor %}
-  </body>
-</html>
+{% extends "layout.html" %}
+{% block head %}
+<script> 
+  $(document).ready(function(){
+    $('[type=radio]').on('change', function(){
+      if ($(this).attr('value') == 'Up') {
+        $.get('/bringup/' + $(this).attr('name'), function(data){ },
+        function(){ alert('test'); window.location.reload(true);}).always(
+        function() { window.location.reload(true);}); }
+      else {
+        $.get('/bringdown/' + $(this).attr('name'), function(data){ }, 
+        function(){ window.location.reload(true);}).always(
+        function() { window.location.reload(true);}); }
+  }); });
+</script>
+{% endblock %}
+{% block content %}
+<h1>Team {{team.teamname}}:  {{team.score}} points!</h1>
+<h2>Instance:  {{instance_ip}}</h2>
+<h3>{{team.email}}</h3>
+{% for checkout, problem in problems %}
+<h4> Problem {{problem.problem_id}}: {{problem.problem_name}} </h4>
+<input type="radio" name="{{checkout.problem}}" value="Up" {%if checkout.state != 'down' %}checked{%endif%}>
+Up <br>
+<input type="radio" name="{{checkout.problem}}" value="Down" {%if checkout.state == 'down' %}checked{%endif%}>
+Down <br>
+{% endfor %}
+{% endblock %}

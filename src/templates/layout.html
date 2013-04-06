@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+{% from "security/_macros.html" import render_field_with_errors, render_field %}
+<html>
+  <head>
+    <link href='static/css/bootstrap.css' rel='stylesheet'>
+    <style>
+      .red { color: red }
+      .green { color: green }
+      body { padding-top: 60px }
+    </style>
+    <script src='static/js/jquery.js'></script>
+    {% block head %}
+    {% endblock %}
+  </head>
+  {% include "security/_messages.html" %}
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="#">Case CTF</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li><a href="/">Home</a></li>
+              <li><a href="/teammanagement">Team Management</a></li>
+              <li><a href="/team">Team</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="content">{% block content %}{% endblock %}</div>
+  </body>
+</html>
