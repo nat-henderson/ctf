@@ -46,16 +46,15 @@ def teams():
 @app.route('/team')
 @login_required
 def redirect_team():
-    #return team(current_user.get_id())
-    teamid = current_user.get_id()
-    team = session.query(Team).filter(Team.id == teamid).first()
-    checkouts = session.query(ProblemCheckout).filter(ProblemCheckout.team == teamid).all()
-    if request.json:
-      #return json.dumps([[checkout.sid, checkout.team, checkout.problem, checkout.secret, checkout.posted_time, checkout.state, checkout.compromised_by] for checkout in checkouts])
-      return json.dumps([[1,2,3,4,5,6]])
-    else:
-      return render_template('team.html')
+    return render_template('team.html')
 
+@app.route('/teamjson')
+def teamjson():
+    teamid = current_user.get_id()
+    checkouts = session.query(ProblemCheckout).filter(ProblemCheckout.team == teamid).all()
+    return json.dumps([[checkout.sid, checkout.team, checkout.problem, checkout.secret, checkout.posted_time, checkout.state, checkout.compromised_by] for checkout in checkouts])
+
+#Not being used, I'm gonna fix things, I swear
 @app.route('/team/<int:teamid>')
 def team(teamid):
     team = session.query(Team).filter(Team.id == teamid).first()
