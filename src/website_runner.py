@@ -29,7 +29,7 @@ def root_callback():
 def get_score(teamid):
     try:
         team = session.query(Team).filter(Team.id == teamid).one()
-        instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
+        instance = session.query(Instance).filter(Instance.iid == team.instance).first()
         if not instance or not instance.ip:
           instance_ip = "Not Ready"
         else:
