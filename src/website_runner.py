@@ -155,6 +155,7 @@ def bring_up_problem(problem_id):
         return ""
 
     local_test = './testscript-' + str(problem.problem_id)
+    print local_test
     if not os.path.exists(local_test):
         remote_f = urlopen(problem.problem_testing_script_location)
         f = open(local_test,'w')
