@@ -1,7 +1,9 @@
 from scoreboard import db, Team, Problem, ProblemCheckout, Instance
-
+import subprocess, os, random, string
+from threading import Timer
 session = db.session
 
+t = None
 
 def callback():
     teams = session.query(Team).all()
@@ -11,6 +13,8 @@ def callback():
         except Exception as e:
             print e
             continue
+    t = Timer(60.0, callback)
+    t.start()
 
 def run_tests(teamid):
     team = session.query(Team).filter(Team.id == teamid).first()
@@ -37,7 +41,13 @@ def run_test(teamid, pid):
     if not checkout or checkout.state == 'down':
         raise Exception("Problem is not up!")
     local_test = './testscript-' + str(problem.problem_id)
-    test_pass = (subprocess.call([local_test, 'get', instance.ip_address, checkout.secret], stdout = output_local) == 0)
+    if not os.path.exists(local_test):
+        remote_f = urlopen(problem.problem_testing_script_location)
+        f = open(local_test,'w')
+        f.write(remote_f.read())
+        f.close()
+        os.chmod(local_test, 0755)
+    test_pass = (subprocess.call([local_test, 'get', instance.ip, checkout.secret]) == 0)
     if checkout.state == 'compromised':
         team.score -= 20
     elif test_pass:
@@ -46,7 +56,14 @@ def run_test(teamid, pid):
     else:
         checkout.state = 'incorrect'
         team.score -= 1
+    checkout.secret = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(64))
+    output = subprocess.call([local_test, 'put', instance.ip, checkout.secret])
+    print output
     session.add(checkout)
     session.add(team)
     session.commit()
 
+
+if __name__ == "__main__":
+    t = Timer(60.0, callback)
+    t.start()
