@@ -95,8 +95,8 @@ def before_first():
 @app.route('/scoreboard')
 @login_required
 def sb_callback():
-    scores = [{'teamname':x.teamname, 'score':x.score} for x in session.query(Team).all()]
-    return render_template("scoreboard.html", scores = scores)
+    #scores = [{'teamname':x.teamname, 'score':x.score} for x in session.query(Team).all()]
+    return render_template("scoreboard.html")
 
 @app.route('/')
 def root_callback():
@@ -123,7 +123,7 @@ def get_score(teamid):
         score = session.query(Team).filter(Team.id == teamid).one().score
     except:
         score = 0
-    return json.dumps(score)
+    return json.dumps({teamid:score})
 
 @app.route('/teams')
 def teams():
@@ -294,6 +294,4 @@ def do_complete():
 
 
 if __name__ == "__main__":
-    db.drop_all()
-    db.create_all()
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=4520)
