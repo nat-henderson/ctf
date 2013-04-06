@@ -11,7 +11,7 @@ from datetime import datetime
 import json, os, random, string, subprocess
 
 app = Flask(__name__)
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False 
 app.config['SECRET_KEY'] = "afsdjfsafasd239"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://ctf:fishandchipsaredelicious@localhost/ctf'
 app.config['SECURITY_REGISTERABLE'] = True

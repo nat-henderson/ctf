@@ -136,8 +136,6 @@ def do_compromise():
     if not match:
         flash('The secret that you have submitted is not valid. Check that you have copied it correctly and try again.')
         return redirect('/')
-    if not match.team == comp_team:
-        flash ('That solution is not valid.')
     if match.state == 'compromised':
         flash ('That problem has already been compromised.')
         return redirect('/')

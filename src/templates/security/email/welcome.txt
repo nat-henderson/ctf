@@ -5,5 +5,3 @@ You can confirm your email through the link below:
 
 {{ confirmation_link }}
 {% endif %}
-
-Instructions for the game can be found at casectf.com/instructions.
