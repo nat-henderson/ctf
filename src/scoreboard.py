@@ -94,6 +94,7 @@ def sb_callback():
 
 @app.route('/')
 def root_callback():
+    print current_user
     if current_user.is_anonymous():
         uname = None
         team_id = None
@@ -101,6 +102,7 @@ def root_callback():
         uname = current_user.teamname
         team_id = current_user.get_id()
         checkouts = session.query(ProblemCheckout).filter(ProblemCheckout.team == team_id).all()
+        print checkouts
         if not checkouts:
             for problem in session.query(Problem).all():
                 session.add(ProblemCheckout(team=team_id, problem=problem.problem_id, secret=None, posted_time=None,
@@ -217,13 +219,16 @@ def do_compromise():
 @login_required
 def manage_problems():
     team_id = current_user.get_id()
+    problems = session.query(ProblemCheckout).filter(ProblemCheckout.team == team_id).all()
+    return render_template('problem_management.html', problems = problems, team=current_user)
     #TODO:  WRITE THIS ACTUAL PAGE
 
 @app.route('/bringup/<int:problem_id>')
 def bring_up_problem(problem_id):
+    print 'test'
     checkout = session.query(ProblemCheckout).filter(ProblemCheckout.team == current_user.get_id()).filter(
             ProblemCheckout.problem == problem_id).first()
-    problem = session,query(Problem).filter(Problem.problem_id == problem_id).first()
+    problem = session.query(Problem).filter(Problem.problem_id == problem_id).first()
     instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
     if not checkout or not problem or not instance or not instance.ip_address:
         flash('problem does not exist')
@@ -234,10 +239,17 @@ def bring_up_problem(problem_id):
         bucket = s3.create_bucket(BUCKET_NAME)
         key = Key(bucket)
         key.key = problem.problem_testing_script_location
-    key.get_contents_to_filename(local_test)
+        key.get_contents_to_filename(local_test)
 
-    subprocess.call([local_test, 'put', instance.ip_address, secret])
-    #TODO:  GET FROM S3, PLANT SECRET
+    output = subprocess.call([local_test, 'put', instance.ip_address, checkout.secret])
+    if output == 0:
+        flash('successfully brought up the service.')
+        checkout.state = 'correct'
+        session.add(checkout)
+        session.commit()
+    else:
+        flash('did not successfully bring up the service; check to see that it is running on the right port.')
+    return redirect('/')
 
 
 @app.route('/bringdown/<int:problem_id>')
@@ -273,6 +285,11 @@ def do_complete():
     flash('Solution successfully submitted!')
     run_test(team, problem)
     return redirect('/')
+
+@app.before_first_request
+def before_first():
+    session.add(Problem(problem_s3_location='test', problem_testing_script_location = 'test2'))
+    session.commit()
 
 if __name__ == "__main__":
     #db.drop_all()

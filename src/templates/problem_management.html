@@ -1,0 +1,32 @@
+{% from "security/_macros.html" import render_field_with_errors, render_field %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href='/static/css/bootstrap.css' rel='stylesheet'>
+    <script src='/static/js/jquery.js'></script>
+    <script> 
+        $(document).ready(function(){
+            $('[type=radio]').on('change', function(){
+            if ($(this).attr('value') == 'Up') {
+                $.get('/bringup/' + $(this).attr('name'), function(data){ }, 
+                function(){location.reload();}); }
+            else {
+                $.get('/bringdown/' + $(this).attr('name'), function(data){ }, 
+                function(){location.reload();}); }
+        }); });
+    </script>
+  </head>
+{% include "security/_messages.html" %}
+  <body>
+    <h1>Team {{team.teamname}}:  {{team.score}} points!</h1>
+    <h2>Instance:  {{instance_ip}}</h2>
+    <h3>{{team.email}}</h3>
+    {% for problem in problems %}
+    <h4> Problem {{problem.problem}} </h4>
+    <input type="radio" name="{{problem.problem}}" value="Up" {%if problem.state != 'down' %}checked{%endif%}>
+    Up <br>
+    <input type="radio" name="{{problem.problem}}" value="Down" {%if problem.state == 'down' %}checked{%endif%}>
+    Down <br>
+    {% endfor %}
+  </body>
+</html>
