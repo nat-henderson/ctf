@@ -39,17 +39,18 @@ def teams():
     return json.dumps([x.teamname for x in teams])
 
 @app.route('/team')
+@login_required
 def redirect_team():
-  if current_user.get_id():
     return team(current_user.get_id())
-  else:
-    return redirect('/')
 
 @app.route('/team/<int:teamid>')
 def team(teamid):
     team = session.query(Team).filter(Team.id == teamid).first()
     instance = session.query(Instance).filter(Instance.iid == current_user.instance).first()
-    instance_ip = instance.ip
+    if not instance or not instance.ip:
+      instance_ip = "Not Ready"
+    else:
+      instance_ip = instance.ip
     return render_template('team.html', team=team, instance_ip = instance_ip)
 
 @app.route('/teammanagement')

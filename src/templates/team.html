@@ -1,4 +1,31 @@
 {% extends "layout.html" %}
+{% block head %}
+<!--
+<script>
+  update_teams = function(){
+    $.getJSON(window.location.pathname, function(data){
+      var keys = Object.keys(data[0]);
+      var html_to_insert = "<table><tr>"
+          $.each(keys, function(k,v){
+            html_to_insert += "<th>"+v+"</th>"
+          });
+          html_to_insert += "</tr>"
+        $.each(data, function(k,v) {
+          html_to_insert += "<tr>"
+            $.each(v, function(k2,v2) {
+              html_to_insert += "<td>"+v2+"</td>"
+            });
+            html_to_insert += "</tr>"
+        });
+        $("#teamboard").html(html_to_insert);
+      });
+  }
+  $(document).ready(function(){
+    update_teams();
+    setInterval(update_teams, 10000);
+  })
+</script>-->
+{% endblock %}
 {% block content %}
 <div class="row">
   <div class="span2">
