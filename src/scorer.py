@@ -2,6 +2,7 @@ from scoreboard import db, Team, Problem, ProblemCheckout, Instance
 import subprocess, os, random, string
 from threading import Timer
 session = db.session
+TIME = 60.0
 
 t = None
 
@@ -13,7 +14,7 @@ def callback():
         except Exception as e:
             print e
             continue
-    t = Timer(60.0, callback)
+    t = Timer(TIME, callback)
     t.start()
 
 def run_tests(teamid):
@@ -65,5 +66,5 @@ def run_test(teamid, pid):
 
 
 if __name__ == "__main__":
-    t = Timer(60.0, callback)
+    t = Timer(TIME, callback)
     t.start()

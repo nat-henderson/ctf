@@ -216,4 +216,4 @@ if __name__ == "__main__":
         startup_script += '\nwget -O /home/ubuntu/problem' + str(problem.problem_id) + '.tgz ' + problem.problem_download_location + '\n'
         startup_script += 'tar xpzf /home/ubuntu/problem' + str(problem.problem_id) + '.tgz -C /home/ubuntu/\n'
     print startup_script
-    app.run(host='0.0.0.0', port=4520)
+    app.run(host='0.0.0.0', port=80)
