@@ -1,24 +1,14 @@
-{% from "security/_macros.html" import render_field_with_errors, render_field %}
-<!DOCTYPE html>
-<html>
-  <head>
-    <link href='/static/css/bootstrap.css' rel='stylesheet'>
-    <script src='/static/js/jquery.js'></script>
-  </head>
-{% include "security/_messages.html" %}
-  <body>               
-      <div class="row">
-        <div class="span2">
-            {{team.teamname}}
-        </div>
-        <div class="span2">
-            {{team.score}}
-        </div>
-        <div class="span2">
-            {{instance_ip}}
-        </div>
-      </div>
-      <div class="row">
-
-  </body>
-</html>
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+  <div class="span2">
+    {{team.teamname}}
+  </div>
+  <div class="span2">
+    {{team.score}}
+  </div>
+  <div class="span2">
+    {{instance_ip}}
+  </div>
+</div>
+{% endblock %}

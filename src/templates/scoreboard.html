@@ -1,62 +1,54 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <link href='static/css/bootstrap.css' rel='stylesheet'>
-    <style>
-      .red { color: red }
-      .green { color: green}
-    </style>
-    <script src='static/js/jquery.js'></script>
-    <script>
-      update_scoreboard = function(){
-        $(".team_row").each(function(i,x){
-          var tds = $(this).children("td");
-          score = $(tds[1]).html();
-          $.getJSON('/score/' + $(x).data("teamid"), function(data){
-            $(tds[0]).html(data[0]);
-            $(tds[1]).html(data[1]);
-            if (score > data[1]) {
-              $(tds[0]).attr("class", "red");
-              $(tds[1]).attr("class", "red");
-            } else if (score < data[1]) {
-              $(tds[0]).attr("class", "green");
-              $(tds[1]).attr("class", "green");
-            } else {
-              $(tds[0]).attr("class", "");
-              $(tds[1]).attr("class", "");
-            }
-          });
-        });
-      }
-      $(document).ready(function(){
-        update_scoreboard();
-        setInterval(update_scoreboard, 10000);
-      })
-    </script>
-  </head>
-  <body>
-    <div id='scoreboard'>
-      <table>
-        <tr>
-          <th>Team</th>
-          <th>Score</th>
-        </tr>
-        {% for team in teams %}
-        <tr class='team_row' data-teamid="{{team}}">
-              <td></td>
-              <td></td>
-          </tr>
-        {% endfor %}
-        <!-- Use Jinja to put in the data-teamid attribute. This is used for the ajax call -->
-        <!-- <tr class='team_row' data-teamid='1'>
-          <td>1</td>
-          <td>1</td>
-        </tr>
-        <tr class='team_row' data-teamid='2'>
-          <td></td>
-          <td></td>
-        </tr> -->
-      </table>
-    </div>
-  </body>
-</html>
+{% extends "layout.html" %}
+{% block head %}
+<script>
+  update_scoreboard = function(){
+    $(".team_row").each(function(i,x){
+      var tds = $(this).children("td");
+      score = $(tds[1]).html();
+      $.getJSON('/score/' + $(x).data("teamid"), function(data){
+        $(tds[0]).html(data[0]);
+        $(tds[1]).html(data[1]);
+        if (score > data[1]) {
+          $(tds[0]).attr("class", "red");
+          $(tds[1]).attr("class", "red");
+          } else if (score < data[1]) {
+          $(tds[0]).attr("class", "green");
+          $(tds[1]).attr("class", "green");
+          } else {
+          $(tds[0]).attr("class", "");
+          $(tds[1]).attr("class", "");
+        }
+      });
+    });
+  }
+  $(document).ready(function(){
+    update_scoreboard();
+    setInterval(update_scoreboard, 10000);
+  })
+</script>
+{% endblock %}
+{% block content %}
+<div id='scoreboard'>
+  <table>
+    <tr>
+      <th>Team</th>
+      <th>Score</th>
+    </tr>
+    {% for team in teams %}
+    <tr class='team_row' data-teamid="{{team}}">
+      <td></td>
+      <td></td>
+    </tr>
+    {% endfor %}
+    <!-- Use Jinja to put in the data-teamid attribute. This is used for the ajax call -->
+    <!-- <tr class='team_row' data-teamid='1'>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr class='team_row' data-teamid='2'>
+      <td></td>
+      <td></td>
+    </tr> -->
+  </table>
+</div>
+{% endblock %}
