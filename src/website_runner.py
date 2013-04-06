@@ -38,6 +38,13 @@ def teams():
     teams = session.query(Team).all()
     return json.dumps([x.teamname for x in teams])
 
+@app.route('/team')
+def redirect_team():
+  if current_user.get_id():
+    return team(current_user.get_id())
+  else:
+    return redirect('/')
+
 @app.route('/team/<int:teamid>')
 def team(teamid):
     team = session.query(Team).filter(Team.id == teamid).first()
@@ -155,6 +162,7 @@ def bring_up_problem(problem_id):
         return ""
 
     local_test = './testscript-' + str(problem.problem_id)
+    print local_test
     if not os.path.exists(local_test):
         remote_f = urlopen(problem.problem_testing_script_location)
         f = open(local_test,'w')
