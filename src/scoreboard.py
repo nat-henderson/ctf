@@ -90,8 +90,8 @@ security = Security(app, user_datastore, register_form=ExtendedRegisterForm)
 @app.route('/scoreboard')
 @login_required
 def sb_callback():
-    #scores = [{'teamname':x.teamname, 'score':x.score} for x in session.query(Team).all()]
-    return render_template("scoreboard.html")
+    teams = [x.id for x in session.query(Team).all()]
+    return render_template("scoreboard.html", teams = teams)
 
 @app.route('/')
 def root_callback():
@@ -115,10 +115,10 @@ def root_callback():
 @app.route('/score/<int:teamid>')
 def get_score(teamid):
     try:
-        score = session.query(Team).filter(Team.id == teamid).one().score
+        team = session.query(Team).filter(Team.id == teamid).one()
     except:
         score = 0
-    return json.dumps({teamid:score})
+    return json.dumps([team.teamname, team.score])
 
 @app.route('/teams')
 def teams():
