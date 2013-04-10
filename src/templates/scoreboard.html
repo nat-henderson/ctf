@@ -8,15 +8,19 @@
       $.getJSON('/score/' + $(x).data("teamid"), function(data){
         $(tds[0]).html(data[0]);
         $(tds[1]).html(data[1]);
+        $(tds[2]).html(data[2]);
         if (score > data[1]) {
           $(tds[0]).attr("class", "red");
           $(tds[1]).attr("class", "red");
+          $(tds[2]).attr("class", "red");
           } else if (score < data[1]) {
           $(tds[0]).attr("class", "green");
           $(tds[1]).attr("class", "green");
+          $(tds[2]).attr("class", "green");
           } else {
           $(tds[0]).attr("class", "");
           $(tds[1]).attr("class", "");
+          $(tds[2]).attr("class", "");
         }
       });
     });
@@ -33,9 +37,11 @@
     <tr>
       <th>Team</th>
       <th>Score</th>
+      <th>Instance IP</th>
     </tr>
     {% for team in teams %}
     <tr class='team_row' data-teamid="{{team}}">
+      <td></td>
       <td></td>
       <td></td>
     </tr>

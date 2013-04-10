@@ -1,15 +1,10 @@
 {% extends "layout.html" %}
 {% block head %}
-<!--
 <script>
   update_teams = function(){
-    $.getJSON(window.location.pathname, function(data){
+    $.getJSON('/teamjson', function(data){
       var keys = Object.keys(data[0]);
-      var html_to_insert = "<table><tr>"
-          $.each(keys, function(k,v){
-            html_to_insert += "<th>"+v+"</th>"
-          });
-          html_to_insert += "</tr>"
+      var html_to_insert = ""
         $.each(data, function(k,v) {
           html_to_insert += "<tr>"
             $.each(v, function(k2,v2) {
@@ -17,25 +12,31 @@
             });
             html_to_insert += "</tr>"
         });
-        $("#teamboard").html(html_to_insert);
+        $("#teambody").html(html_to_insert);
       });
   }
   $(document).ready(function(){
     update_teams();
     setInterval(update_teams, 10000);
   })
-</script>-->
+</script>
 {% endblock %}
 {% block content %}
-<div class="row">
-  <div class="span2">
-    {{team.teamname}}
-  </div>
-  <div class="span2">
-    {{team.score}}
-  </div>
-  <div class="span2">
-    {{instance_ip}}
-  </div>
+<div id="teamboard">
+  <table>
+    <thead>
+      <tr>
+        <th>SID</th>
+        <th>Team</th>
+        <th>Problem</th>
+        <th>Secret</th>
+        <th>Posted Time</th>
+        <th>State</th>
+        <th>Compromised By</th>
+      </tr>
+    </thead>
+    <tbody id="teambody">
+    </tbody>
+  </table>
 </div>
 {% endblock %}
